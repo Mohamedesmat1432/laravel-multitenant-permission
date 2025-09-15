@@ -1,9 +1,16 @@
+composer config repositories.laravel-multitenant-permission git https://github.com/Mohamedesmat1432/laravel-multitenant-permission.git
+
+composer require esmat/laravel-multitenant-permission
+
+composer update && composer dump-autoload
+
+composer require 
+
 1. Publish Package Assets
 
-# Publish configuration file
+# Publish configuration && migrations file
 php artisan vendor:publish --provider="Esmat\MultiTenantPermission\Providers\MultiTenantPermissionServiceProvider" --tag=config
 
-# Publish migrations
 php artisan vendor:publish --provider="Esmat\MultiTenantPermission\Providers\MultiTenantPermissionServiceProvider" --tag=migrations
 
 
