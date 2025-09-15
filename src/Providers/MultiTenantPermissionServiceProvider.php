@@ -106,7 +106,7 @@ class MultiTenantPermissionServiceProvider extends ServiceProvider
         ], 'config');
         
         $this->publishes([
-            __DIR__.'/../../database/migrations' => database_path('migrations'),
+            __DIR__.'/../Database/Migrations' => database_path('migrations'),
         ], 'migrations');
         
         // Register routes
