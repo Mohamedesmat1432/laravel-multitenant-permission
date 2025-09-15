@@ -36,6 +36,10 @@ class MultiTenancyRbacServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../../database/migrations' => database_path('migrations'),
         ], 'migrations');
+
+        $this->publishes([
+            __DIR__.'/../../routes/api.php' => routes_path('api.php'),
+        ], 'routes');
         
         $this->loadMigrationsFrom(__DIR__.'/../../database/migrations');
         
