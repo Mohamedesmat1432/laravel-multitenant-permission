@@ -4,8 +4,6 @@ namespace Elgaml\MultiTenancyRbac\Services;
 
 use Illuminate\Support\Facades\Cache;
 use Elgaml\MultiTenancyRbac\Models\User;
-use Elgaml\MultiTenancyRbac\Models\Role;
-use Elgaml\MultiTenancyRbac\Models\Permission;
 
 class RbacService
 {
@@ -107,19 +105,27 @@ class RbacService
     public function createPermission(array $attributes)
     {
         $attributes['tenant_id'] = tenant('id');
-        return Permission::create($attributes);
+        $permissionModel = config('multi-tenancy-rbac.models.permission', \Elgaml\MultiTenancyRbac\Models\Permission::class);
+        return $permissionModel::create($attributes);
     }
     
     public function createRole(array $attributes)
     {
         $attributes['tenant_id'] = tenant('id');
-        return Role::create($attributes);
+        $roleModel = config('multi-tenancy-rbac.models.role', \Elgaml\MultiTenancyRbac\Models\Role::class);
+        return $roleModel::create($attributes);
     }
     
-    public function assignPermissionToRole(Role $role, $permission)
+    public function assignPermissionToRole($role, $permission)
     {
+        if (is_string($role)) {
+            $roleModel = config('multi-tenancy-rbac.models.role', \Elgaml\MultiTenancyRbac\Models\Role::class);
+            $role = $roleModel::whereName($role)->firstOrFail();
+        }
+        
         if (is_string($permission)) {
-            $permission = Permission::whereName($permission)->firstOrFail();
+            $permissionModel = config('multi-tenancy-rbac.models.permission', \Elgaml\MultiTenancyRbac\Models\Permission::class);
+            $permission = $permissionModel::whereName($permission)->firstOrFail();
         }
         
         $role->givePermissionTo($permission);
@@ -128,10 +134,11 @@ class RbacService
         return $role;
     }
     
-    public function assignRoleToUser(User $user, $role)
+    public function assignRoleToUser($user, $role)
     {
         if (is_string($role)) {
-            $role = Role::whereName($role)->firstOrFail();
+            $roleModel = config('multi-tenancy-rbac.models.role', \Elgaml\MultiTenancyRbac\Models\Role::class);
+            $role = $roleModel::whereName($role)->firstOrFail();
         }
         
         $user->roles()->syncWithoutDetaching($role);
@@ -140,10 +147,16 @@ class RbacService
         return $user;
     }
     
-    public function removePermissionFromRole(Role $role, $permission)
+    public function removePermissionFromRole($role, $permission)
     {
+        if (is_string($role)) {
+            $roleModel = config('multi-tenancy-rbac.models.role', \Elgaml\MultiTenancyRbac\Models\Role::class);
+            $role = $roleModel::whereName($role)->firstOrFail();
+        }
+        
         if (is_string($permission)) {
-            $permission = Permission::whereName($permission)->firstOrFail();
+            $permissionModel = config('multi-tenancy-rbac.models.permission', \Elgaml\MultiTenancyRbac\Models\Permission::class);
+            $permission = $permissionModel::whereName($permission)->firstOrFail();
         }
         
         $role->revokePermissionTo($permission);
@@ -152,10 +165,11 @@ class RbacService
         return $role;
     }
     
-    public function removeRoleFromUser(User $user, $role)
+    public function removeRoleFromUser($user, $role)
     {
         if (is_string($role)) {
-            $role = Role::whereName($role)->firstOrFail();
+            $roleModel = config('multi-tenancy-rbac.models.role', \Elgaml\MultiTenancyRbac\Models\Role::class);
+            $role = $roleModel::whereName($role)->firstOrFail();
         }
         
         $user->roles()->detach($role);
@@ -171,7 +185,8 @@ class RbacService
     
     public function getPermissionsTree()
     {
-        $permissions = Permission::all();
+        $permissionModel = config('multi-tenancy-rbac.models.permission', \Elgaml\MultiTenancyRbac\Models\Permission::class);
+        $permissions = $permissionModel::all();
         $tree = [];
         
         foreach ($permissions as $permission) {

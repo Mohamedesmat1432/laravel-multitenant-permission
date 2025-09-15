@@ -29,18 +29,7 @@ class MultiTenancyRbacServiceProvider extends ServiceProvider
 
     public function boot()
     {
-        $this->publishes([
-            __DIR__.'/../../config/multi-tenancy-rbac.php' => config_path('multi-tenancy-rbac.php'),
-        ], 'config');
-
-        $this->publishes([
-            __DIR__.'/../../database/migrations' => database_path('migrations'),
-        ], 'migrations');
-
-        $this->publishes([
-            __DIR__.'/../../routes/api.php' => routes_path('api.php'),
-        ], 'routes');
-        
+        $this->configurePublishing();
         $this->loadMigrationsFrom(__DIR__.'/../../database/migrations');
         
         if ($this->app->runningInConsole()) {
@@ -54,13 +43,44 @@ class MultiTenancyRbacServiceProvider extends ServiceProvider
         $this->registerApiRoutes();
     }
     
+    protected function configurePublishing()
+    {
+        // Config
+        $this->publishes([
+            __DIR__.'/../../config/multi-tenancy-rbac.php' => config_path('multi-tenancy-rbac.php'),
+        ], 'config');
+        
+        // Routes
+        $this->publishes([
+            __DIR__.'/../../publishable/routes/api.php' => base_path('routes/multi-tenancy-rbac.php'),
+        ], 'routes');
+        
+        // Controllers
+        $this->publishes([
+            __DIR__.'/../../publishable/controllers/Api' => app_path('Http/Controllers/Api/MultiTenancyRbac'),
+        ], 'controllers');
+        
+        // Models
+        $this->publishes([
+            __DIR__.'/../../publishable/models' => app_path('Models/MultiTenancyRbac'),
+        ], 'models');
+    }
+    
     protected function registerApiRoutes()
     {
-        $this->app->router->group([
-            'prefix' => 'api',
-            'middleware' => ['api', 'auth:sanctum'],
-        ], function ($router) {
-            require __DIR__.'/../../routes/api.php';
-        });
+        // Check if the user has published the routes file
+        $routesPath = base_path('routes/multi-tenancy-rbac.php');
+        
+        if (file_exists($routesPath)) {
+            $this->loadRoutesFrom($routesPath);
+        } else {
+            // Load the default routes from the package
+            $this->app->router->group([
+                'prefix' => 'api',
+                'middleware' => ['api', 'auth:sanctum'],
+            ], function ($router) {
+                require __DIR__.'/../../publishable/routes/api.php';
+            });
+        }
     }
 }

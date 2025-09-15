@@ -2,23 +2,24 @@
 
 namespace Elgaml\MultiTenancyRbac\Traits;
 
+use Elgaml\MultiTenancyRbac\Facades\Rbac;
 use Elgaml\MultiTenancyRbac\Models\Permission;
-use Elgaml\MultiTenancyRbac\Services\RbacService;
 
 trait HasPermissions
 {
     public function permissions()
     {
-        return $this->belongsToMany(Permission::class);
+        $permissionModel = config('multi-tenancy-rbac.models.permission', \Elgaml\MultiTenancyRbac\Models\Permission::class);
+        return $this->belongsToMany($permissionModel);
     }
     
     public function hasPermission($permissions, $requireAll = false)
     {
-        return app(RbacService::class)->can($this, $permissions, $requireAll);
+        return Rbac::can($this, $permissions, $requireAll);
     }
     
     public function can($abilities, $arguments = [])
     {
-        return app(RbacService::class)->can($this, $abilities, false);
+        return Rbac::can($this, $abilities, false);
     }
 }

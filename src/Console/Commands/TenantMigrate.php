@@ -3,7 +3,7 @@
 namespace Elgaml\MultiTenancyRbac\Console\Commands;
 
 use Illuminate\Console\Command;
-use Elgaml\MultiTenancyRbac\Models\Tenant;
+use Elgaml\MultiTenancyRbac\Facades\Tenancy;
 
 class TenantMigrate extends Command
 {
@@ -19,7 +19,8 @@ class TenantMigrate extends Command
         $path = $this->option('path') ?? config('multi-tenancy-rbac.database.migration_path');
         
         if ($tenantId) {
-            $tenant = Tenant::find($tenantId);
+            $tenantModel = config('multi-tenancy-rbac.models.tenant', \Elgaml\MultiTenancyRbac\Models\Tenant::class);
+            $tenant = $tenantModel::find($tenantId);
             
             if (!$tenant) {
                 $this->error("Tenant with ID {$tenantId} not found");
@@ -31,7 +32,8 @@ class TenantMigrate extends Command
             
             $this->info("Migrations completed for tenant: {$tenant->name}");
         } else {
-            $tenants = Tenant::all();
+            $tenantModel = config('multi-tenancy-rbac.models.tenant', \Elgaml\MultiTenancyRbac\Models\Tenant::class);
+            $tenants = $tenantModel::all();
             
             $this->info("Running migrations for all tenants");
             

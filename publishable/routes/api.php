@@ -1,11 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Elgaml\MultiTenancyRbac\Http\Controllers\AuthController;
-use Elgaml\MultiTenancyRbac\Http\Controllers\Api\TenantController;
-use Elgaml\MultiTenancyRbac\Http\Controllers\Api\RoleController;
-use Elgaml\MultiTenancyRbac\Http\Controllers\Api\PermissionController;
-use Elgaml\MultiTenancyRbac\Http\Controllers\Api\UserController;
+use App\Http\Controllers\MultiTenancyRbac\AuthController;
+use App\Http\Controllers\Api\MultiTenancyRbac\TenantController;
+use App\Http\Controllers\Api\MultiTenancyRbac\RoleController;
+use App\Http\Controllers\Api\MultiTenancyRbac\PermissionController;
+use App\Http\Controllers\Api\MultiTenancyRbac\UserController;
 
 // Authentication routes
 Route::post('register', [AuthController::class, 'register']);

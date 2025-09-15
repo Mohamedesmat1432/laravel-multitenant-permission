@@ -1,6 +1,6 @@
 <?php
 
-namespace Elgaml\MultiTenancyRbac\Models;
+namespace App\Models\MultiTenancyRbac;
 
 use Illuminate\Database\Eloquent\Model;
 use Elgaml\MultiTenancyRbac\Traits\BelongsToTenant;

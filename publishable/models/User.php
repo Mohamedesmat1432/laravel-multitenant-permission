@@ -1,6 +1,6 @@
 <?php
 
-namespace Elgaml\MultiTenancyRbac\Models;
+namespace App\Models\MultiTenancyRbac;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;

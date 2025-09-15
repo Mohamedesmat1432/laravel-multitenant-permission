@@ -8,7 +8,8 @@ trait HasFeatureFlags
 {
     public function featureFlags()
     {
-        return $this->hasMany(FeatureFlag::class);
+        $featureFlagModel = config('multi-tenancy-rbac.models.feature_flag', \Elgaml\MultiTenancyRbac\Models\FeatureFlag::class);
+        return $this->hasMany($featureFlagModel);
     }
     
     public function hasFeatureFlag($key)

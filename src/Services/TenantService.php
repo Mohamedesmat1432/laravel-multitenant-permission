@@ -4,7 +4,6 @@ namespace Elgaml\MultiTenancyRbac\Services;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Elgaml\MultiTenancyRbac\Models\Tenant;
 use Elgaml\MultiTenancyRbac\Exceptions\TenantCouldNotBeIdentifiedException;
 
 class TenantService
@@ -64,8 +63,9 @@ class TenantService
     protected function identifyByDomain()
     {
         $domain = $this->request->getHost();
+        $tenantModel = config('multi-tenancy-rbac.models.tenant', \Elgaml\MultiTenancyRbac\Models\Tenant::class);
         
-        return Tenant::where('domain', $domain)->first();
+        return $tenantModel::where('domain', $domain)->first();
     }
     
     protected function identifyBySubdomain()
@@ -75,7 +75,8 @@ class TenantService
         
         if (count($parts) > 2) {
             $subdomain = $parts[0];
-            return Tenant::where('domain', $subdomain)->first();
+            $tenantModel = config('multi-tenancy-rbac.models.tenant', \Elgaml\MultiTenancyRbac\Models\Tenant::class);
+            return $tenantModel::where('domain', $subdomain)->first();
         }
         
         return null;
@@ -97,18 +98,21 @@ class TenantService
     protected function getTenantById($id)
     {
         $cacheKey = "tenant_{$id}";
+        $tenantModel = config('multi-tenancy-rbac.models.tenant', \Elgaml\MultiTenancyRbac\Models\Tenant::class);
         
-        return Cache::remember($cacheKey, now()->addHour(), function () use ($id) {
-            return Tenant::find($id);
+        return Cache::remember($cacheKey, now()->addHour(), function () use ($id, $tenantModel) {
+            return $tenantModel::find($id);
         });
     }
     
-    public function setCurrentTenant(Tenant $tenant)
+    public function setCurrentTenant($tenant)
     {
         $this->currentTenant = $tenant;
         
         // Configure tenant connection
-        $tenant->configure();
+        if (method_exists($tenant, 'configure')) {
+            $tenant->configure();
+        }
         
         return $tenant;
     }
@@ -136,16 +140,22 @@ class TenantService
     
     public function all()
     {
-        return Tenant::all();
+        $tenantModel = config('multi-tenancy-rbac.models.tenant', \Elgaml\MultiTenancyRbac\Models\Tenant::class);
+        return $tenantModel::all();
     }
     
     public function create(array $attributes)
     {
-        $tenant = Tenant::create($attributes);
+        $tenantModel = config('multi-tenancy-rbac.models.tenant', \Elgaml\MultiTenancyRbac\Models\Tenant::class);
+        $tenant = $tenantModel::create($attributes);
         
         if (config('multi-tenancy-rbac.database.auto_create')) {
-            $tenant->createDatabase();
-            $tenant->runMigrations();
+            if (method_exists($tenant, 'createDatabase')) {
+                $tenant->createDatabase();
+            }
+            if (method_exists($tenant, 'runMigrations')) {
+                $tenant->runMigrations();
+            }
         }
         
         return $tenant;

@@ -1,9 +1,9 @@
 <?php
 
-namespace Elgaml\MultiTenancyRbac\Http\Controllers;
+namespace App\Http\Controllers\MultiTenancyRbac;
 
 use App\Http\Controllers\Controller;
-use Elgaml\MultiTenancyRbac\Models\User;
+use App\Models\MultiTenancyRbac\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;

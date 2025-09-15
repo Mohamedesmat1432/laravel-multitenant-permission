@@ -1,9 +1,9 @@
 <?php
 
-namespace Elgaml\MultiTenancyRbac\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\MultiTenancyRbac;
 
 use App\Http\Controllers\Controller;
-use Elgaml\MultiTenancyRbac\Models\Role;
+use App\Models\MultiTenancyRbac\Role;
 use Elgaml\MultiTenancyRbac\Services\RbacService;
 use Illuminate\Http\Request;
 

@@ -1,14 +1,19 @@
 <?php
 
-namespace Elgaml\MultiTenancyRbac\Models;
+namespace App\Models\MultiTenancyRbac;
 
 use Illuminate\Database\Eloquent\Model;
 
-class TenantDomain extends Model
+class FeatureFlag extends Model
 {
     protected $fillable = [
         'tenant_id',
-        'domain',
+        'key',
+        'enabled',
+    ];
+    
+    protected $casts = [
+        'enabled' => 'boolean',
     ];
     
     public function tenant()

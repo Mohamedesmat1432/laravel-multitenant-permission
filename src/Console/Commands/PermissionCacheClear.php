@@ -3,7 +3,7 @@
 namespace Elgaml\MultiTenancyRbac\Console\Commands;
 
 use Illuminate\Console\Command;
-use Elgaml\MultiTenancyRbac\Services\RbacService;
+use Elgaml\MultiTenancyRbac\Facades\Rbac;
 
 class PermissionCacheClear extends Command
 {
@@ -13,7 +13,7 @@ class PermissionCacheClear extends Command
     
     public function handle()
     {
-        app(RbacService::class)->clearCache();
+        Rbac::clearCache();
         
         $this->info('RBAC cache cleared successfully');
         

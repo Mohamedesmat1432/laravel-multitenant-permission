@@ -76,4 +76,22 @@ return [
         'middleware' => ['api', 'auth:sanctum'],
         'throttle' => '60,1',
     ],
+    
+    /*
+    |--------------------------------------------------------------------------
+    | Published Models
+    |--------------------------------------------------------------------------
+    |
+    | When you publish the models, you can specify the namespace here.
+    | This allows you to easily extend the models in your own application.
+    |
+    */
+    'models' => [
+        'tenant' => \App\Models\MultiTenancyRbac\Tenant::class,
+        'user' => \App\Models\MultiTenancyRbac\User::class,
+        'role' => \App\Models\MultiTenancyRbac\Role::class,
+        'permission' => \App\Models\MultiTenancyRbac\Permission::class,
+        'tenant_domain' => \App\Models\MultiTenancyRbac\TenantDomain::class,
+        'feature_flag' => \App\Models\MultiTenancyRbac\FeatureFlag::class,
+    ],
 ];
