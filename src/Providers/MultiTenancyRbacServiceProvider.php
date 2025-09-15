@@ -52,7 +52,7 @@ class MultiTenancyRbacServiceProvider extends ServiceProvider
 
         // Migrations
         $this->publishes([
-            __DIR__ . '/../../database/migrations' => databse_path('migrations'),
+            __DIR__ . '/../../database/migrations' => database_path('migrations'),
         ], 'migrations');
 
         // Routes
