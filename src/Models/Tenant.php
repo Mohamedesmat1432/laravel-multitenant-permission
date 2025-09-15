@@ -1,153 +1,96 @@
 <?php
 
-namespace Esmat\MultiTenantPermission\Models;
+namespace Elgaml\MultiTenancyRbac\Models;
 
-use Esmat\MultiTenantPermission\Contracts\Tenant as TenantContract;
-use Esmat\MultiTenantPermission\Exceptions\InvalidTenantException;
-use Esmat\MultiTenantPermission\Services\TenantDatabaseManager;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Event;
-use Esmat\MultiTenantPermission\Events\TenantCreated;
-use Esmat\MultiTenantPermission\Events\TenantUpdated;
-use Esmat\MultiTenantPermission\Events\TenantDeleted;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Elgaml\MultiTenancyRbac\Traits\HasSettings;
+use Elgaml\MultiTenancyRbac\Traits\HasFeatureFlags;
+use Elgaml\MultiTenancyRbac\Events\TenantCreated;
+use Elgaml\MultiTenancyRbac\Events\TenantUpdated;
+use Elgaml\MultiTenancyRbac\Events\TenantDeleted;
 
-class Tenant extends BaseModel implements TenantContract
+class Tenant extends Model
 {
-    protected $fillable = ['name', 'domain', 'database', 'settings'];
+    use SoftDeletes, HasSettings, HasFeatureFlags;
+    
+    protected $fillable = [
+        'name',
+        'domain',
+        'database_name',
+        'is_active',
+        'settings',
+    ];
     
     protected $casts = [
         'settings' => 'array',
+        'is_active' => 'boolean',
     ];
     
-    protected $table = 'tenants';
+    protected $dispatchesEvents = [
+        'created' => TenantCreated::class,
+        'updated' => TenantUpdated::class,
+        'deleted' => TenantDeleted::class,
+    ];
     
-    /**
-     * The connection name for the model.
-     */
-    protected $connection = 'central';
-    
-    /**
-     * Configure the database connection for this tenant
-     */
-    public function configure(): self
+    public function domains()
     {
-        $connection = config('multitenant-permission.tenant_connection');
-        
-        config([
-            "database.connections.{$connection}.database" => $this->database,
-        ]);
-        
-        // Purge the connection to ensure the new config is used
-        app('db')->purge($connection);
-        
-        return $this;
+        return $this->hasMany(TenantDomain::class);
     }
     
-    /**
-     * Set this tenant as the current tenant
-     */
-    public function use(): self
-    {
-        app()->singleton('currentTenant', function () {
-            return $this;
-        });
-        
-        return $this;
-    }
-    
-    /**
-     * Get the current tenant
-     */
-    public static function current(): ?self
-    {
-        return app('currentTenant');
-    }
-    
-    /**
-     * Identify tenant by ID
-     */
-    public static function identifyById(int $id): ?self
-    {
-        return static::find($id);
-    }
-    
-    /**
-     * Identify tenant by domain
-     */
-    public static function identifyByDomain(string $domain): ?self
-    {
-        return static::where('domain', $domain)->first();
-    }
-    
-    /**
-     * Get all users for this tenant
-     */
     public function users()
     {
-        return $this->hasMany(config('multitenant-permission.user_model'));
+        return $this->hasMany(User::class);
     }
     
-    /**
-     * Get a setting value
-     */
-    public function getSetting(string $key, $default = null)
+    public function roles()
     {
-        return $this->settings[$key] ?? $default;
+        return $this->hasMany(Role::class);
     }
     
-    /**
-     * Set a setting value
-     */
-    public function setSetting(string $key, $value): void
+    public function permissions()
     {
-        $settings = $this->settings ?? [];
-        $settings[$key] = $value;
+        return $this->hasMany(Permission::class);
+    }
+    
+    public function createDatabase()
+    {
+        $databaseName = $this->database_name ?: config('multi-tenancy-rbac.database.prefix') . $this->id;
         
-        $this->settings = $settings;
+        // Create database
+        \DB::statement("CREATE DATABASE IF NOT EXISTS `{$databaseName}`");
+        
+        $this->database_name = $databaseName;
         $this->save();
-    }
-    
-    /**
-     * Check if a feature is enabled for this tenant
-     */
-    public function featureEnabled(string $feature): bool
-    {
-        return $this->getSetting("features.{$feature}", false);
-    }
-    
-    /**
-     * Enable a feature for this tenant
-     */
-    public function enableFeature(string $feature): void
-    {
-        $this->setSetting("features.{$feature}", true);
-    }
-    
-    /**
-     * Disable a feature for this tenant
-     */
-    public function disableFeature(string $feature): void
-    {
-        $this->setSetting("features.{$feature}", false);
-    }
-    
-    /**
-     * The "booted" method of the model.
-     */
-    protected static function booted()
-    {
-        parent::booted();
         
-        static::created(function ($tenant) {
-            Event::dispatch(new TenantCreated($tenant));
-        });
+        return $databaseName;
+    }
+    
+    public function configure()
+    {
+        // Set tenant database connection
+        config([
+            'database.connections.tenant.database' => $this->database_name,
+        ]);
         
-        static::updated(function ($tenant) {
-            Event::dispatch(new TenantUpdated($tenant, $tenant->getOriginal(), $tenant->getChanges()));
-        });
+        \DB::purge('tenant');
+        \DB::reconnect('tenant');
         
-        static::deleted(function ($tenant) {
-            Event::dispatch(new TenantDeleted($tenant));
-        });
+        return $this;
+    }
+    
+    public function runMigrations()
+    {
+        $this->configure();
+        
+        $path = config('multi-tenancy-rbac.database.migration_path');
+        
+        \Artisan::call('migrate', [
+            '--database' => 'tenant',
+            '--path' => $path,
+            '--force' => true,
+        ]);
+        
+        return $this;
     }
 }

@@ -1,113 +1,58 @@
 <?php
 
-namespace Esmat\MultiTenantPermission\Models;
+namespace Elgaml\MultiTenancyRbac\Models;
 
-use Esmat\MultiTenantPermission\Models\BaseModel;
 use Illuminate\Database\Eloquent\Model;
+use Elgaml\MultiTenancyRbac\Traits\BelongsToTenant;
+use Elgaml\MultiTenancyRbac\Traits\HasPermissions;
 
-class Role extends BaseModel
+class Role extends Model
 {
-    protected $fillable = ['name', 'description', 'settings'];
+    use BelongsToTenant, HasPermissions;
     
-    protected $casts = [
-        'settings' => 'array',
+    protected $fillable = [
+        'name',
+        'display_name',
+        'description',
+        'tenant_id',
     ];
     
-    /**
-     * The connection name for the model.
-     */
-    protected $connection = 'tenant';
-    
-    /**
-     * Get the permissions that belong to the role
-     */
-    public function permissions()
-    {
-        return $this->belongsToMany(config('multitenant-permission.permission_model'))
-            ->withTimestamps();
-    }
-    
-    /**
-     * Get the users that belong to the role
-     */
     public function users()
     {
-        return $this->belongsToMany(config('multitenant-permission.user_model'))
-            ->withTimestamps();
+        return $this->belongsToMany(User::class);
     }
     
-    /**
-     * Check if role has a specific permission
-     */
-    public function hasPermission(string $permission): bool
+    public function permissions()
     {
-        return $this->permissions()->where('name', $permission)->exists();
+        return $this->belongsToMany(Permission::class);
     }
     
-    /**
-     * Give a permission to the role
-     */
-    public function givePermissionTo($permission): self
+    public function givePermissionTo($permission)
     {
         if (is_string($permission)) {
-            $permission = config('multitenant-permission.permission_model')::where('name', $permission)->firstOrFail();
+            $permission = Permission::whereName($permission)->firstOrFail();
         }
         
-        $this->permissions()->syncWithoutDetaching([$permission->id]);
+        $this->permissions()->syncWithoutDetaching($permission);
         
         return $this;
     }
     
-    /**
-     * Revoke a permission from the role
-     */
-    public function revokePermissionTo($permission): self
+    public function revokePermissionTo($permission)
     {
         if (is_string($permission)) {
-            $permission = config('multitenant-permission.permission_model')::where('name', $permission)->firstOrFail();
+            $permission = Permission::whereName($permission)->firstOrFail();
         }
         
-        $this->permissions()->detach($permission->id);
+        $this->permissions()->detach($permission);
         
         return $this;
     }
     
-    /**
-     * Sync permissions for the role
-     */
-    public function syncPermissions(array $permissions): self
+    public function syncPermissions($permissions)
     {
-        $permissionIds = [];
-        
-        foreach ($permissions as $permission) {
-            if (is_string($permission)) {
-                $permission = config('multitenant-permission.permission_model')::where('name', $permission)->firstOrFail();
-            }
-            $permissionIds[] = $permission->id;
-        }
-        
-        $this->permissions()->sync($permissionIds);
+        $this->permissions()->sync($permissions);
         
         return $this;
-    }
-    
-    /**
-     * Get a setting value
-     */
-    public function getSetting(string $key, $default = null)
-    {
-        return $this->settings[$key] ?? $default;
-    }
-    
-    /**
-     * Set a setting value
-     */
-    public function setSetting(string $key, $value): void
-    {
-        $settings = $this->settings ?? [];
-        $settings[$key] = $value;
-        
-        $this->settings = $settings;
-        $this->save();
     }
 }

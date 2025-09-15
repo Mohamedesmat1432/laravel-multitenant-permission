@@ -1,45 +1,43 @@
-# Laravel Multi-Tenancy & Permissions Package
+# Laravel Multi-Tenancy & RBAC Package
 
-A professional-grade multi-tenancy and role-based permissions package for Laravel 12, designed for senior developers with enterprise requirements.
+A professional-grade multi-tenancy and role-based access control (RBAC) package for Laravel 12 API projects.
 
 ## Features
 
-- **Multi-Tenancy**
-  - Database-per-tenant architecture
-  - Multiple tenant identification methods (header, domain, subdomain)
-  - Tenant-specific settings and feature flags
-  - Automatic database creation and migration
-  - Database backup and restore capabilities
+### Multi-Tenancy
+- Database-per-tenant architecture
+- Multiple tenant identification methods (header, domain, subdomain, path)
+- Tenant-specific settings and feature flags
+- Automatic database creation and migration
+- Tenant isolation
 
-- **Role-Based Permissions**
-  - Hierarchical permissions system
-  - Wildcard permissions support (e.g., `users.*`)
-  - Permission caching for performance
-  - Role-permission relationships
-  - User-role relationships
+### Role-Based Access Control (RBAC)
+- Hierarchical permissions system
+- Wildcard permissions support (e.g., users.*)
+- Permission caching for performance
+- Role-permission relationships
+- User-role relationships
 
-- **Security**
-  - Strict tenant isolation
-  - Rate limiting for authentication and permission checks
-  - Encryption service for sensitive data
-  - Audit logging for all actions
-  - Event-driven architecture for monitoring
+### API-First Design
+- RESTful API endpoints for all models
+- JSON responses with proper status codes
+- Authentication with Laravel Sanctum
+- Authorization with middleware
 
-- **Performance**
-  - Comprehensive caching strategies
-  - Database query optimization
-  - Efficient memory usage
-  - Redis support for distributed caching
+### Security
+- Strict tenant isolation
+- Rate limiting for authentication and permission checks
+- Audit logging for all actions
+- Event-driven architecture for monitoring
 
-- **Developer Experience**
-  - Repository pattern for data access
-  - Strategy pattern for tenant identification
-  - Factory pattern for tenant creation
-  - Comprehensive test suite
-  - Detailed documentation
+### Performance
+- Comprehensive caching strategies
+- Database query optimization
+- Efficient memory usage
+- Redis support for distributed caching
 
 ## Installation
 
+1. Install the package via Composer:
 ```bash
-composer require esmat/laravel-multitenant-permission
-
+composer require elgaml/laravel-multi-tenancy-rbac

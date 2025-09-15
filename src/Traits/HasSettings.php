@@ -1,58 +1,33 @@
 <?php
 
-namespace Esmat\MultiTenantPermission\Traits;
+namespace Elgaml\MultiTenancyRbac\Traits;
 
 trait HasSettings
 {
-    /**
-     * Get a setting value
-     */
-    public function getSetting(string $key, $default = null)
+    public function getSetting($key, $default = null)
     {
         return $this->settings[$key] ?? $default;
     }
     
-    /**
-     * Set a setting value
-     */
-    public function setSetting(string $key, $value): void
+    public function setSetting($key, $value)
     {
         $settings = $this->settings ?? [];
         $settings[$key] = $value;
         
         $this->settings = $settings;
         $this->save();
-    }
-    
-    /**
-     * Get all settings
-     */
-    public function getSettings(): array
-    {
-        return $this->settings ?? [];
-    }
-    
-    /**
-     * Update multiple settings at once
-     */
-    public function updateSettings(array $settings): void
-    {
-        $currentSettings = $this->settings ?? [];
-        $updatedSettings = array_merge($currentSettings, $settings);
         
-        $this->settings = $updatedSettings;
-        $this->save();
+        return $this;
     }
     
-    /**
-     * Remove a setting
-     */
-    public function removeSetting(string $key): void
+    public function removeSetting($key)
     {
         $settings = $this->settings ?? [];
         unset($settings[$key]);
         
         $this->settings = $settings;
         $this->save();
+        
+        return $this;
     }
 }

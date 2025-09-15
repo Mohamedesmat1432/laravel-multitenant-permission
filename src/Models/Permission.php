@@ -1,25 +1,28 @@
 <?php
 
-namespace Esmat\MultiTenantPermission\Models;
+namespace Elgaml\MultiTenancyRbac\Models;
 
-use Esmat\MultiTenantPermission\Models\BaseModel;
 use Illuminate\Database\Eloquent\Model;
+use Elgaml\MultiTenancyRbac\Traits\BelongsToTenant;
 
-class Permission extends BaseModel
+class Permission extends Model
 {
-    protected $fillable = ['name', 'description', 'group'];
+    use BelongsToTenant;
     
-    /**
-     * The connection name for the model.
-     */
-    protected $connection = 'tenant';
+    protected $fillable = [
+        'name',
+        'display_name',
+        'description',
+        'tenant_id',
+    ];
     
-    /**
-     * Get the roles that belong to the permission
-     */
     public function roles()
     {
-        return $this->belongsToMany(config('multitenant-permission.role_model'))
-            ->withTimestamps();
+        return $this->belongsToMany(Role::class);
+    }
+    
+    public function users()
+    {
+        return $this->belongsToMany(User::class);
     }
 }
