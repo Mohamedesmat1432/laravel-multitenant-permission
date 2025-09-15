@@ -20,18 +20,18 @@
     },
     "autoload": {
         "psr-4": {
-            "Esmat\MultiTenantPermission\\": "src/"
+            "Esmat\\MultiTenantPermission\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Esmat\MultiTenantPermission\\Tests\\": "tests/"
+            "Esmat\\MultiTenantPermission\\Tests\\": "tests/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Esmat\MultiTenantPermission\\Providers\\MultiTenantPermissionServiceProvider"
+                "Esmat\\MultiTenantPermission\\Providers\\MultiTenantPermissionServiceProvider"
             ]
         }
     },
