@@ -73,8 +73,18 @@ return [
     */
     'api' => [
         'prefix' => 'api',
-        'middleware' => ['api', 'auth:sanctum'],
+        'middleware' => ['api'],
         'throttle' => '60,1',
+    ],
+    
+    /*
+    |--------------------------------------------------------------------------
+    | Sanctum Configuration
+    |--------------------------------------------------------------------------
+    */
+    'sanctum' => [
+        'expiration' => null, // Token expiration in minutes
+        'middleware' => 'auth:sanctum',
     ],
     
     /*
@@ -87,11 +97,11 @@ return [
     |
     */
     'models' => [
-        'tenant' => \App\Models\MultiTenancyRbac\Tenant::class,
-        'user' => \App\Models\MultiTenancyRbac\User::class,
-        'role' => \App\Models\MultiTenancyRbac\Role::class,
-        'permission' => \App\Models\MultiTenancyRbac\Permission::class,
-        'tenant_domain' => \App\Models\MultiTenancyRbac\TenantDomain::class,
-        'feature_flag' => \App\Models\MultiTenancyRbac\FeatureFlag::class,
+        'tenant' => \Elgaml\MultiTenancyRbac\Models\Tenant::class,
+        'user' => \Elgaml\MultiTenancyRbac\Models\User::class,
+        'role' => \Elgaml\MultiTenancyRbac\Models\Role::class,
+        'permission' => \Elgaml\MultiTenancyRbac\Models\Permission::class,
+        'tenant_domain' => \Elgaml\MultiTenancyRbac\Models\TenantDomain::class,
+        'feature_flag' => \Elgaml\MultiTenancyRbac\Models\FeatureFlag::class,
     ],
 ];

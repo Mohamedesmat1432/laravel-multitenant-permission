@@ -1,6 +1,6 @@
-# Laravel Multi-Tenancy & RBAC Package
+# Laravel Multi-Tenancy & RBAC Package with Sanctum
 
-A professional-grade multi-tenancy and role-based access control (RBAC) package for Laravel 12 API projects.
+A professional-grade multi-tenancy and role-based access control (RBAC) package for Laravel 12 API projects with Laravel Sanctum integration.
 
 ## Features
 
@@ -18,11 +18,11 @@ A professional-grade multi-tenancy and role-based access control (RBAC) package 
 - Role-permission relationships
 - User-role relationships
 
-### API-First Design
-- RESTful API endpoints for all models
-- JSON responses with proper status codes
-- Authentication with Laravel Sanctum
-- Authorization with middleware
+### API Authentication with Sanctum
+- Token-based authentication
+- Token management endpoints
+- Ability to create multiple tokens per user
+- Token abilities/permissions
 
 ### Security
 - Strict tenant isolation
@@ -38,6 +38,9 @@ A professional-grade multi-tenancy and role-based access control (RBAC) package 
 
 ## Installation
 
-1. Install the package via Composer:
+### 1. Create a New Laravel Project
+
 ```bash
-composer require elgaml/laravel-multi-tenancy-rbac
+composer create-project laravel/laravel my-project
+cd my-project
+

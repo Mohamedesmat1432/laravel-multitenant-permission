@@ -1,7 +1,7 @@
 {
     "name": "elgaml/laravel-multi-tenancy-rbac",
-    "description": "Advanced multi-tenancy and RBAC package for Laravel 12 API projects",
-    "keywords": ["laravel", "multi-tenancy", "rbac", "api", "permissions"],
+    "description": "Advanced multi-tenancy and RBAC package for Laravel 12 API projects with Sanctum integration",
+    "keywords": ["laravel", "multi-tenancy", "rbac", "api", "permissions", "sanctum"],
     "license": "MIT",
     "authors": [
         {
@@ -11,7 +11,8 @@
     ],
     "require": {
         "php": "^8.2",
-        "laravel/framework": "^12.0"
+        "laravel/framework": "^12.0",
+        "laravel/sanctum": "^4.0"
     },
     "require-dev": {
         "orchestra/testbench": "^9.0",
