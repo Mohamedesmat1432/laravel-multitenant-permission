@@ -14,6 +14,10 @@ class CreatePermissionsTable extends Migration
             $table->string('description')->nullable();
             $table->string('group')->nullable();
             $table->timestamps();
+            
+            // Add indexes
+            $table->index('name');
+            $table->index('group');
         });
     }
 

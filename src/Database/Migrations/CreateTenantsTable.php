@@ -15,6 +15,10 @@ class CreateTenantsTable extends Migration
             $table->string('database')->unique();
             $table->json('settings')->nullable();
             $table->timestamps();
+            
+            // Add indexes
+            $table->index('domain');
+            $table->index('database');
         });
     }
 

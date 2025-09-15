@@ -2,16 +2,21 @@
 
 namespace Esmat\MultiTenantPermission\Models;
 
+use Esmat\MultiTenantPermission\Models\BaseModel;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Cache;
 
-class Role extends Model
+class Role extends BaseModel
 {
     protected $fillable = ['name', 'description', 'settings'];
     
     protected $casts = [
         'settings' => 'array',
     ];
+    
+    /**
+     * The connection name for the model.
+     */
+    protected $connection = 'tenant';
     
     /**
      * Get the permissions that belong to the role
@@ -99,32 +104,10 @@ class Role extends Model
      */
     public function setSetting(string $key, $value): void
     {
-        $this->settings = array_merge($this->settings ?? [], [$key => $value]);
-        $this->save();
-    }
-    
-    /**
-     * Clear role cache
-     */
-    public function clearCache(): void
-    {
-        // Clear all user permission caches that have this role
-        foreach ($this->users as $user) {
-            $user->clearPermissionCache();
-        }
-    }
-    
-    /**
-     * The "booted" method of the model.
-     */
-    protected static function booted()
-    {
-        static::updated(function ($role) {
-            $role->clearCache();
-        });
+        $settings = $this->settings ?? [];
+        $settings[$key] = $value;
         
-        static::deleted(function ($role) {
-            $role->clearCache();
-        });
+        $this->settings = $settings;
+        $this->save();
     }
 }

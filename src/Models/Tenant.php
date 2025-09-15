@@ -2,19 +2,29 @@
 
 namespace Esmat\MultiTenantPermission\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Esmat\MultiTenantPermission\Contracts\Tenant as TenantContract;
 use Esmat\MultiTenantPermission\Exceptions\InvalidTenantException;
 use Esmat\MultiTenantPermission\Services\TenantDatabaseManager;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
+use Esmat\MultiTenantPermission\Events\TenantCreated;
+use Esmat\MultiTenantPermission\Events\TenantUpdated;
+use Esmat\MultiTenantPermission\Events\TenantDeleted;
 
-class Tenant extends Model implements TenantContract
+class Tenant extends BaseModel implements TenantContract
 {
     protected $fillable = ['name', 'domain', 'database', 'settings'];
     
     protected $casts = [
         'settings' => 'array',
     ];
+    
+    protected $table = 'tenants';
+    
+    /**
+     * The connection name for the model.
+     */
+    protected $connection = 'central';
     
     /**
      * Configure the database connection for this tenant
@@ -58,13 +68,7 @@ class Tenant extends Model implements TenantContract
      */
     public static function identifyById(int $id): ?self
     {
-        return Cache::remember(
-            config('multitenant-permission.cache.prefix') . "tenant:{$id}",
-            config('multitenant-permission.cache.ttl'),
-            function () use ($id) {
-                return static::find($id);
-            }
-        );
+        return static::find($id);
     }
     
     /**
@@ -72,40 +76,7 @@ class Tenant extends Model implements TenantContract
      */
     public static function identifyByDomain(string $domain): ?self
     {
-        return Cache::remember(
-            config('multitenant-permission.cache.prefix') . "tenant:domain:{$domain}",
-            config('multitenant-permission.cache.ttl'),
-            function () use ($domain) {
-                return static::where('domain', $domain)->first();
-            }
-        );
-    }
-    
-    /**
-     * Create a new tenant with database
-     */
-    public static function createWithDatabase(array $attributes): self
-    {
-        $tenantDatabaseManager = app(TenantDatabaseManager::class);
-        
-        // Validate attributes
-        if (empty($attributes['database'])) {
-            throw new InvalidTenantException('Database name is required');
-        }
-        
-        // Create database
-        $tenantDatabaseManager->createDatabase($attributes['database']);
-        
-        // Create tenant record
-        $tenant = static::create($attributes);
-        
-        // Run migrations for tenant
-        $tenantDatabaseManager->migrate($tenant);
-        
-        // Seed default data
-        $tenantDatabaseManager->seed($tenant);
-        
-        return $tenant;
+        return static::where('domain', $domain)->first();
     }
     
     /**
@@ -129,17 +100,35 @@ class Tenant extends Model implements TenantContract
      */
     public function setSetting(string $key, $value): void
     {
-        $this->settings = array_merge($this->settings ?? [], [$key => $value]);
+        $settings = $this->settings ?? [];
+        $settings[$key] = $value;
+        
+        $this->settings = $settings;
         $this->save();
     }
     
     /**
-     * Clear tenant cache
+     * Check if a feature is enabled for this tenant
      */
-    public function clearCache(): void
+    public function featureEnabled(string $feature): bool
     {
-        Cache::forget(config('multitenant-permission.cache.prefix') . "tenant:{$this->id}");
-        Cache::forget(config('multitenant-permission.cache.prefix') . "tenant:domain:{$this->domain}");
+        return $this->getSetting("features.{$feature}", false);
+    }
+    
+    /**
+     * Enable a feature for this tenant
+     */
+    public function enableFeature(string $feature): void
+    {
+        $this->setSetting("features.{$feature}", true);
+    }
+    
+    /**
+     * Disable a feature for this tenant
+     */
+    public function disableFeature(string $feature): void
+    {
+        $this->setSetting("features.{$feature}", false);
     }
     
     /**
@@ -147,13 +136,18 @@ class Tenant extends Model implements TenantContract
      */
     protected static function booted()
     {
+        parent::booted();
+        
+        static::created(function ($tenant) {
+            Event::dispatch(new TenantCreated($tenant));
+        });
+        
         static::updated(function ($tenant) {
-            $tenant->clearCache();
+            Event::dispatch(new TenantUpdated($tenant, $tenant->getOriginal(), $tenant->getChanges()));
         });
         
         static::deleted(function ($tenant) {
-            $tenant->clearCache();
-            app(TenantDatabaseManager::class)->deleteDatabase($tenant->database);
+            Event::dispatch(new TenantDeleted($tenant));
         });
     }
 }

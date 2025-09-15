@@ -2,15 +2,21 @@
 
 namespace Esmat\MultiTenantPermission\Models;
 
+use Esmat\MultiTenantPermission\Models\BaseModel;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use Esmat\MultiTenantPermission\Services\PermissionService;
-use Illuminate\Support\Facades\Cache;
+use Esmat\MultiTenantPermission\Traits\HasRoles;
+use Esmat\MultiTenantPermission\Traits\HasPermissions;
+use Esmat\MultiTenantPermission\Traits\HasSettings;
+use Illuminate\Support\Facades\Hash;
+use Esmat\MultiTenantPermission\Events\UserCreated;
+use Esmat\MultiTenantPermission\Events\UserUpdated;
+use Esmat\MultiTenantPermission\Events\UserDeleted;
 
-class User extends Authenticatable
+class User extends BaseModel
 {
-    use HasApiTokens, Notifiable;
+    use HasApiTokens, Notifiable, HasRoles, HasPermissions, HasSettings;
     
     protected $fillable = ['name', 'email', 'password', 'settings'];
     
@@ -21,13 +27,14 @@ class User extends Authenticatable
     ];
     
     /**
-     * Get the roles that belong to the user
+     * The connection name for the model.
      */
-    public function roles()
-    {
-        return $this->belongsToMany(config('multitenant-permission.role_model'))
-            ->withTimestamps();
-    }
+    protected $connection = 'tenant';
+    
+    /**
+     * The attributes that should be mutated to dates.
+     */
+    protected $dates = ['email_verified_at'];
     
     /**
      * Get the tenant that owns the user
@@ -38,162 +45,45 @@ class User extends Authenticatable
     }
     
     /**
-     * Check if user has a specific role
+     * Hash password automatically
      */
-    public function hasRole(string $role): bool
+    public function setPasswordAttribute($value)
     {
-        return $this->roles()->where('name', $role)->exists();
-    }
-    
-    /**
-     * Check if user has any of the given roles
-     */
-    public function hasAnyRole(array $roles): bool
-    {
-        return $this->roles()->whereIn('name', $roles)->exists();
-    }
-    
-    /**
-     * Check if user has all of the given roles
-     */
-    public function hasAllRoles(array $roles): bool
-    {
-        return $this->roles()->whereIn('name', $roles)->count() === count($roles);
-    }
-    
-    /**
-     * Check if user has a specific permission
-     */
-    public function hasPermission(string $permission): bool
-    {
-        if (config('multitenant-permission.security.permission_cache')) {
-            return Cache::remember(
-                config('multitenant-permission.cache.prefix') . "user:{$this->id}:permissions",
-                config('multitenant-permission.cache.ttl'),
-                function () use ($permission) {
-                    return app(PermissionService::class)->userHasPermission($this, $permission);
-                }
-            );
+        if ($value) {
+            $this->attributes['password'] = Hash::make($value);
         }
-        
-        return app(PermissionService::class)->userHasPermission($this, $permission);
     }
     
     /**
-     * Check if user has any of the given permissions
+     * Check if user is a super admin
      */
-    public function hasAnyPermission(array $permissions): bool
+    public function isSuperAdmin(): bool
     {
-        foreach ($permissions as $permission) {
-            if ($this->hasPermission($permission)) {
-                return true;
-            }
-        }
-        
-        return false;
+        return $this->hasRole('super-admin');
     }
     
     /**
-     * Check if user has all of the given permissions
+     * Check if user is an admin
      */
-    public function hasAllPermissions(array $permissions): bool
+    public function isAdmin(): bool
     {
-        foreach ($permissions as $permission) {
-            if (!$this->hasPermission($permission)) {
-                return false;
-            }
-        }
-        
-        return true;
+        return $this->hasRole('admin') || $this->isSuperAdmin();
     }
     
     /**
-     * Assign a role to the user
+     * Get user's full name
      */
-    public function assignRole($role): self
+    public function getFullNameAttribute(): string
     {
-        if (is_string($role)) {
-            $role = config('multitenant-permission.role_model')::where('name', $role)->firstOrFail();
-        }
-        
-        $this->roles()->syncWithoutDetaching([$role->id]);
-        
-        // Clear permission cache
-        $this->clearPermissionCache();
-        
-        return $this;
+        return $this->name;
     }
     
     /**
-     * Remove a role from the user
+     * Get user's avatar URL
      */
-    public function removeRole($role): self
+    public function getAvatarUrlAttribute(): string
     {
-        if (is_string($role)) {
-            $role = config('multitenant-permission.role_model')::where('name', $role)->firstOrFail();
-        }
-        
-        $this->roles()->detach($role->id);
-        
-        // Clear permission cache
-        $this->clearPermissionCache();
-        
-        return $this;
-    }
-    
-    /**
-     * Sync roles for the user
-     */
-    public function syncRoles(array $roles): self
-    {
-        $roleIds = [];
-        
-        foreach ($roles as $role) {
-            if (is_string($role)) {
-                $role = config('multitenant-permission.role_model')::where('name', $role)->firstOrFail();
-            }
-            $roleIds[] = $role->id;
-        }
-        
-        $this->roles()->sync($roleIds);
-        
-        // Clear permission cache
-        $this->clearPermissionCache();
-        
-        return $this;
-    }
-    
-    /**
-     * Get all permissions for the user
-     */
-    public function getAllPermissions(): array
-    {
-        return app(PermissionService::class)->getUserPermissions($this);
-    }
-    
-    /**
-     * Get a setting value
-     */
-    public function getSetting(string $key, $default = null)
-    {
-        return $this->settings[$key] ?? $default;
-    }
-    
-    /**
-     * Set a setting value
-     */
-    public function setSetting(string $key, $value): void
-    {
-        $this->settings = array_merge($this->settings ?? [], [$key => $value]);
-        $this->save();
-    }
-    
-    /**
-     * Clear permission cache
-     */
-    public function clearPermissionCache(): void
-    {
-        Cache::forget(config('multitenant-permission.cache.prefix') . "user:{$this->id}:permissions");
+        return $this->getSetting('avatar_url', 'https://ui-avatars.com/api/?name=' . urlencode($this->name));
     }
     
     /**
@@ -201,12 +91,18 @@ class User extends Authenticatable
      */
     protected static function booted()
     {
+        parent::booted();
+        
+        static::created(function ($user) {
+            Event::dispatch(new UserCreated($user));
+        });
+        
         static::updated(function ($user) {
-            $user->clearPermissionCache();
+            Event::dispatch(new UserUpdated($user, $user->getOriginal(), $user->getChanges()));
         });
         
         static::deleted(function ($user) {
-            $user->clearPermissionCache();
+            Event::dispatch(new UserDeleted($user));
         });
     }
 }

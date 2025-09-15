@@ -11,6 +11,15 @@ use Esmat\MultiTenantPermission\Models\Tenant;
 use Esmat\MultiTenantPermission\Models\User;
 use Esmat\MultiTenantPermission\Models\Role;
 use Esmat\MultiTenantPermission\Models\Permission;
+use Esmat\MultiTenantPermission\Strategies\TenantIdentification\TenantIdentificationContext;
+use Esmat\MultiTenantPermission\Strategies\TenantIdentification\HeaderStrategy;
+use Esmat\MultiTenantPermission\Strategies\TenantIdentification\DomainStrategy;
+use Esmat\MultiTenantPermission\Strategies\TenantIdentification\SubdomainStrategy;
+use Esmat\MultiTenantPermission\Repositories\TenantRepository;
+use Esmat\MultiTenantPermission\Factories\TenantFactory;
+use Esmat\MultiTenantPermission\Services\EncryptionService;
+use Esmat\MultiTenantPermission\Services\AuditLogService;
+use Esmat\MultiTenantPermission\Services\CacheService;
 
 class MultiTenantPermissionServiceProvider extends ServiceProvider
 {
@@ -30,6 +39,49 @@ class MultiTenantPermissionServiceProvider extends ServiceProvider
         // Register services
         $this->app->singleton(TenantDatabaseManager::class, function ($app) {
             return new TenantDatabaseManager();
+        });
+        
+        $this->app->singleton(TenantRepository::class, function ($app) {
+            return new TenantRepository();
+        });
+        
+        $this->app->singleton(TenantFactory::class, function ($app) {
+            return new TenantFactory($app->make(TenantDatabaseManager::class));
+        });
+        
+        $this->app->singleton(EncryptionService::class, function ($app) {
+            return new EncryptionService();
+        });
+        
+        $this->app->singleton(AuditLogService::class, function ($app) {
+            return new AuditLogService();
+        });
+        
+        $this->app->singleton(CacheService::class, function ($app) {
+            return new CacheService();
+        });
+        
+        // Register tenant identification context
+        $this->app->singleton(TenantIdentificationContext::class, function ($app) {
+            $context = new TenantIdentificationContext();
+            $tenantRepository = $app->make(TenantRepository::class);
+            
+            // Register identification strategies
+            $config = config('multitenant-permission.tenant_identification');
+            
+            if ($config['header']) {
+                $context->addStrategy(new HeaderStrategy($tenantRepository, $config['header']));
+            }
+            
+            if ($config['domain']) {
+                $context->addStrategy(new DomainStrategy($tenantRepository));
+            }
+            
+            if ($config['subdomain']) {
+                $context->addStrategy(new SubdomainStrategy($tenantRepository));
+            }
+            
+            return $context;
         });
     }
 
@@ -54,7 +106,7 @@ class MultiTenantPermissionServiceProvider extends ServiceProvider
         ], 'config');
         
         $this->publishes([
-            __DIR__.'/../Database/Migrations' => database_path('migrations'),
+            __DIR__.'/../../database/migrations' => database_path('migrations'),
         ], 'migrations');
         
         // Register routes
@@ -62,6 +114,9 @@ class MultiTenantPermissionServiceProvider extends ServiceProvider
         
         // Configure database connections
         $this->configureDatabase();
+        
+        // Register event listeners
+        $this->registerEventListeners();
     }
     
     protected function configureDatabase()
@@ -82,5 +137,16 @@ class MultiTenantPermissionServiceProvider extends ServiceProvider
                 'engine' => null,
             ],
         ]);
+    }
+    
+    protected function registerEventListeners()
+    {
+        $events = config('multitenant-permission.events');
+        
+        foreach ($events as $event => $listeners) {
+            foreach ($listeners as $listener) {
+                \Event::listen($event, $listener);
+            }
+        }
     }
 }

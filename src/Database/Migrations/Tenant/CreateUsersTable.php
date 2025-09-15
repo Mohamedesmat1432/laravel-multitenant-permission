@@ -17,6 +17,10 @@ class CreateUsersTable extends Migration
             $table->rememberToken();
             $table->json('settings')->nullable();
             $table->timestamps();
+            
+            // Add indexes
+            $table->index('email');
+            $table->index('name');
         });
     }
 

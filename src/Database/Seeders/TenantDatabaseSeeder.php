@@ -20,6 +20,7 @@ class TenantDatabaseSeeder extends Seeder
             ['name' => 'view-users', 'description' => 'View users', 'group' => 'User Management'],
             ['name' => 'create-users', 'description' => 'Create users', 'group' => 'User Management'],
             ['name' => 'edit-users', 'description' => 'Edit users', 'group' => 'User Management'],
+            ['name' => 'delete-users', 'description' => 'Delete users', 'group' => 'User Management'],
             ['name' => 'view-reports', 'description' => 'View reports', 'group' => 'Reporting'],
             ['name' => 'manage-inventory', 'description' => 'Manage inventory', 'group' => 'Inventory'],
             ['name' => 'view-profile', 'description' => 'View profile', 'group' => 'Profile'],
@@ -27,14 +28,14 @@ class TenantDatabaseSeeder extends Seeder
         ];
 
         foreach ($permissions as $permission) {
-            Permission::create($permission);
+            Permission::firstOrCreate($permission);
         }
 
         // Create roles and assign permissions
         $roles = config('multitenant-permission.default_roles');
 
         foreach ($roles as $roleName => $roleData) {
-            $role = Role::create([
+            $role = Role::firstOrCreate([
                 'name' => $roleName,
                 'description' => $roleData['description'] ?? null,
             ]);

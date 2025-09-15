@@ -31,6 +31,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Table Names
+    |--------------------------------------------------------------------------
+    */
+    'table_names' => [
+        'tenants' => 'tenants',
+        'users' => 'users',
+        'roles' => 'roles',
+        'permissions' => 'permissions',
+        'role_user' => 'role_user',
+        'permission_role' => 'permission_role',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Tenant Database Connection
     |--------------------------------------------------------------------------
     */
@@ -43,8 +57,8 @@ return [
     */
     'tenant_identification' => [
         'header' => 'X-Tenant-ID',
-        'domain' => false, // Set to true to use domain-based identification
-        'subdomain' => false, // Set to true to use subdomain-based identification
+        'domain' => false,
+        'subdomain' => false,
     ],
 
     /*
@@ -54,7 +68,7 @@ return [
     */
     'default_roles' => [
         'super-admin' => [
-            'permissions' => ['*'], // Wildcard for all permissions
+            'permissions' => ['*'],
             'description' => 'Super Administrator with all permissions'
         ],
         'admin' => [
@@ -86,8 +100,9 @@ return [
     */
     'cache' => [
         'enabled' => true,
-        'ttl' => 3600, // 1 hour
+        'ttl' => 3600,
         'prefix' => 'multitenant:',
+        'driver' => 'redis',
     ],
 
     /*
@@ -96,12 +111,16 @@ return [
     |--------------------------------------------------------------------------
     */
     'security' => [
-        'strict_tenant_isolation' => true, // Prevent cross-tenant data access
-        'permission_cache' => true, // Cache user permissions
+        'strict_tenant_isolation' => true,
+        'permission_cache' => true,
         'rate_limiting' => [
             'enabled' => true,
             'attempts' => 60,
             'decay_minutes' => 1,
+        ],
+        'encryption' => [
+            'enabled' => true,
+            'key' => env('APP_KEY'),
         ],
     ],
 
@@ -113,6 +132,57 @@ return [
     'api' => [
         'prefix' => 'api',
         'middleware' => ['api', 'tenant'],
-        'throttle' => 'api', // Throttle middleware name
+        'throttle' => 'api',
+        'pagination' => [
+            'default_per_page' => 15,
+            'max_per_page' => 100,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Database Configuration
+    |--------------------------------------------------------------------------
+    */
+    'database' => [
+        'prefix' => 'tenant_',
+        'charset' => 'utf8mb4',
+        'collation' => 'utf8mb4_unicode_ci',
+        'engine' => 'InnoDB',
+        'backup' => [
+            'enabled' => false,
+            'path' => storage_path('app/backups'),
+            'schedule' => '0 0 * * *',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Event Listeners
+    |--------------------------------------------------------------------------
+    */
+    'events' => [
+        'tenant_created' => [
+            \Esmat\MultiTenantPermission\Listeners\SendTenantCreatedNotification::class,
+            \Esmat\MultiTenantPermission\Listeners\LogTenantActivity::class,
+        ],
+        'tenant_updated' => [
+            \Esmat\MultiTenantPermission\Listeners\LogTenantActivity::class,
+        ],
+        'tenant_deleted' => [
+            \Esmat\MultiTenantPermission\Listeners\LogTenantActivity::class,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Feature Flags
+    |--------------------------------------------------------------------------
+    */
+    'features' => [
+        'audit_logs' => true,
+        'two_factor_auth' => false,
+        'sso' => false,
+        'api_rate_limiting' => true,
     ],
 ];

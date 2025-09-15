@@ -5,6 +5,7 @@ namespace Esmat\MultiTenantPermission\Console\Commands;
 use Illuminate\Console\Command;
 use Esmat\MultiTenantPermission\Models\Tenant;
 use Esmat\MultiTenantPermission\Services\TenantDatabaseManager;
+use Illuminate\Support\Facades\Log;
 
 class TenantSeed extends Command
 {
@@ -32,7 +33,30 @@ class TenantSeed extends Command
         } else {
             // Seed all tenants
             $this->info("Seeding all tenants");
-            $tenantDatabaseManager->seedAllTenants();
+            
+            $tenants = Tenant::all();
+            $failedTenants = [];
+            
+            foreach ($tenants as $tenant) {
+                try {
+                    $this->info("Seeding tenant: {$tenant->name} (ID: {$tenant->id})");
+                    $tenantDatabaseManager->seed($tenant);
+                    $this->info("Seeding completed for tenant: {$tenant->name}");
+                } catch (\Exception $e) {
+                    $this->error("Failed to seed tenant {$tenant->name}: {$e->getMessage()}");
+                    $failedTenants[] = $tenant->id;
+                    
+                    Log::error("Failed to seed tenant {$tenant->name}: {$e->getMessage()}", [
+                        'exception' => $e,
+                    ]);
+                }
+            }
+            
+            if (!empty($failedTenants)) {
+                $this->error("Failed to seed " . count($failedTenants) . " tenant(s): " . implode(', ', $failedTenants));
+                return 1;
+            }
+            
             $this->info("Seeding completed for all tenants");
         }
         
