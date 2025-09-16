@@ -2,27 +2,9 @@
 
 namespace App\Models\MultiTenancyRbac;
 
-use Illuminate\Database\Eloquent\Model;
-use Elgaml\MultiTenancyRbac\Traits\BelongsToTenant;
+use Elgaml\MultiTenancyRbac\Models\Permission as BasePermission;
 
-class Permission extends Model
+class Permission extends BasePermission
 {
-    use BelongsToTenant;
-    
-    protected $fillable = [
-        'name',
-        'display_name',
-        'description',
-        'tenant_id',
-    ];
-    
-    public function roles()
-    {
-        return $this->belongsToMany(Role::class);
-    }
-    
-    public function users()
-    {
-        return $this->belongsToMany(User::class);
-    }
+    // You can add custom methods or override parent methods here
 }

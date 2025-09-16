@@ -2,22 +2,9 @@
 
 namespace App\Models\MultiTenancyRbac;
 
-use Illuminate\Database\Eloquent\Model;
+use Elgaml\MultiTenancyRbac\Models\FeatureFlag as BaseFeatureFlag;
 
-class FeatureFlag extends Model
+class FeatureFlag extends BaseFeatureFlag
 {
-    protected $fillable = [
-        'tenant_id',
-        'key',
-        'enabled',
-    ];
-    
-    protected $casts = [
-        'enabled' => 'boolean',
-    ];
-    
-    public function tenant()
-    {
-        return $this->belongsTo(Tenant::class);
-    }
+    // You can add custom methods or override parent methods here
 }

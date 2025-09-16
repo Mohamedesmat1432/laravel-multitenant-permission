@@ -38,9 +38,7 @@ A professional-grade multi-tenancy and role-based access control (RBAC) package 
 
 ## Installation
 
-### 1. Create a New Laravel Project
+### 1. Install the Package
 
 ```bash
-composer create-project laravel/laravel my-project
-cd my-project
-
+composer require elgaml/laravel-multi-tenancy-rbac

@@ -2,17 +2,9 @@
 
 namespace App\Models\MultiTenancyRbac;
 
-use Illuminate\Database\Eloquent\Model;
+use Elgaml\MultiTenancyRbac\Models\TenantDomain as BaseTenantDomain;
 
-class TenantDomain extends Model
+class TenantDomain extends BaseTenantDomain
 {
-    protected $fillable = [
-        'tenant_id',
-        'domain',
-    ];
-    
-    public function tenant()
-    {
-        return $this->belongsTo(Tenant::class);
-    }
+    // You can add custom methods or override parent methods here
 }
